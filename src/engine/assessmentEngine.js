@@ -42,11 +42,13 @@ function missingCoreInfo(answers) {
 
   return CORE_FIELDS
     .filter((field) => isMissingOrUnknown(answers[field]))
-    .map((field) => createMissingInformation({
-      code: `${field.toUpperCase()}_MISSING`,
-      message: messages[field],
-      field
-    }));
+    .map((field) =>
+      createMissingInformation({
+        code: `${field.toUpperCase()}_MISSING`,
+        message: messages[field],
+        field
+      })
+    );
 }
 
 function emptyStress() {
@@ -77,6 +79,8 @@ function createInsufficientDataAssessment(answers, missingInformation, rules) {
     stillAboveSafeEmi: false,
     interestBand: null,
     aprBand: null,
+    feeSummary: null,
+    tenureComparison: [],
     baselineStress: emptyStress(),
     requestedLoanStress: emptyStress(),
     risks: [],
@@ -94,7 +98,10 @@ function createInsufficientDataAssessment(answers, missingInformation, rules) {
         title: "More information is needed",
         message: "The recommendation is cautious because core affordability information is missing.",
         inputs: Object.fromEntries(CORE_FIELDS.map((field) => [field, answers[field] ?? null])),
-        rules: { minimumRequiredFields: CORE_FIELDS, decisionStatus: rules.assessment ? DECISION_STATUSES.INSUFFICIENT_DATA : null },
+        rules: {
+          minimumRequiredFields: CORE_FIELDS,
+          decisionStatus: rules.assessment ? DECISION_STATUSES.INSUFFICIENT_DATA : null
+        },
         improvement: "Provide the missing affordability answers to calculate a complete recommendation."
       }
     ],
@@ -336,12 +343,14 @@ export function calculateConfidence({ answers, missingInformation, warnings, rul
 export function findMissingInformation(warnings) {
   return warnings
     .filter((item) => item.code !== "PRICING_ESTIMATE_ONLY")
-    .map((item) => createMissingInformation({
-      code: item.code,
-      message: item.message,
-      field: item.field ?? null,
-      severity: "warning"
-    }));
+    .map((item) =>
+      createMissingInformation({
+        code: item.code,
+        message: item.message,
+        field: item.field ?? null,
+        severity: "warning"
+      })
+    );
 }
 
 export function buildExplanations({ answers, snapshot, assessment, rules }) {
@@ -417,22 +426,26 @@ export function buildExplanations({ answers, snapshot, assessment, rules }) {
 export function buildNegotiationPoints(assessment) {
   const points = [
     {
-      id: "kfs",
+      id: "request-kfs",
+      priority: "high",
       title: "Ask for the Key Facts Statement",
       message: "Request the KFS before accepting any offer so the headline rate and all-in APR can be compared."
     },
     {
-      id: "fees-apr",
-      title: "Confirm all compulsory fees",
-      message: "Ask which charges are deducted upfront and how they affect APR."
+      id: "compare-apr",
+      priority: "high",
+      title: "Compare all-in APR",
+      message: "Compare APR rather than only the advertised interest rate."
     },
     {
       id: "safe-emi",
+      priority: "medium",
       title: "Compare the offer EMI with your safe EMI",
       message: `Keep the lender EMI at or below the safe EMI estimate of ${assessment.safeEmi ?? "the calculated safe amount"}.`
     },
     {
       id: "terms",
+      priority: "medium",
       title: "Check prepayment, insurance, and rate terms",
       message: "Ask whether insurance is optional, whether the rate is fixed or floating, and what prepayment charges apply."
     }
@@ -441,6 +454,7 @@ export function buildNegotiationPoints(assessment) {
   if (assessment.verdict === VERDICTS.BORROW_LESS) {
     points.splice(3, 0, {
       id: "lower-amount-or-tenure",
+      priority: "high",
       title: "Negotiate a safer amount or tenure",
       message: "Ask whether a lower amount or a different tenure can keep EMI within the safe limit."
     });
@@ -485,6 +499,25 @@ function hasOnlyFiniteNumbers(value) {
   return true;
 }
 
+function createFeeSummary(snapshot, rules) {
+  return {
+    processingFeeRate: rules.fees.processingFeeRate,
+    processingFeeAmount: snapshot.fees.value.processingFee,
+    otherMandatoryFees: snapshot.fees.value.otherMandatoryFees,
+    totalUpfrontFees: snapshot.fees.value.totalUpfrontFees,
+    netDisbursal: snapshot.fees.value.netDisbursal
+  };
+}
+
+function createTenureComparison(snapshot, safeEmi) {
+  return snapshot.tenureComparison.map((option) => ({
+    tenureMonths: option.tenureMonths,
+    emi: option.emi,
+    totalInterest: option.totalInterest,
+    withinSafeEmi: option.emi <= safeEmi
+  }));
+}
+
 export function runAssessment(answers = {}, rules = defaultRules) {
   const ruleValidation = validateRules(rules);
   if (!ruleValidation.ok) return ruleValidation;
@@ -515,6 +548,8 @@ export function runAssessment(answers = {}, rules = defaultRules) {
   const safeEmi = snapshot.safeEmi.value;
   const proposedEmi = snapshot.proposedEmi.value;
   const requestedAmount = answers.requestedAmount;
+  const feeSummary = createFeeSummary(snapshot, rules);
+  const tenureComparison = createTenureComparison(snapshot, safeEmi);
 
   const verdict = determineVerdict({
     hasBlockingCoreData: false,
@@ -571,6 +606,8 @@ export function runAssessment(answers = {}, rules = defaultRules) {
     stillAboveSafeEmi: tenureChoice.stillAboveSafeEmi,
     interestBand: snapshot.rateBand.value,
     aprBand: snapshot.aprBand.value,
+    feeSummary,
+    tenureComparison,
     baselineStress,
     requestedLoanStress,
     risks,
@@ -592,5 +629,3 @@ export function runAssessment(answers = {}, rules = defaultRules) {
 }
 
 export { CONFIDENCE_LEVELS, DECISION_STATUSES, REPAYMENT_DIFFICULTY_TYPES, RISK_SEVERITIES, VERDICTS };
-
-

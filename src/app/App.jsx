@@ -4,6 +4,7 @@ import { personas } from "../data/personas.js";
 import { useAssessment } from "../state/useAssessment.js";
 import { PageShell } from "../components/layout/PageShell.jsx";
 import { QuestionnaireScreen } from "../components/questions/QuestionnaireScreen.jsx";
+import { ResultsScreen } from "../components/results/ResultsScreen.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { ConfidenceBadge } from "../components/ui/ConfidenceBadge.jsx";
@@ -17,11 +18,11 @@ const phaseDescriptions = {
   [PHASES.ESSENTIAL]:
     "A short first pass collects only the answers needed to prepare a useful estimate.",
   [PHASES.INITIAL_RESULT]:
-    "Your answers are captured. The financial assessment engine will be connected in the next step.",
+    "Preview space for earlier result concepts; the full assessment now opens on the Results screen.",
   [PHASES.REFINEMENT]:
     "Follow-up questions will appear only when they can improve confidence or change an output.",
   [PHASES.RESULTS]:
-    "The final view will compare safe borrowing, likely lender range, pricing, EMI options, and stress.",
+    "Review your borrower-safe amount, EMI comfort, APR estimate, stress test, and lender talking points.",
   [PHASES.CARD]:
     "The lender conversation summary will fit on one mobile-friendly, printable page."
 };
@@ -42,9 +43,6 @@ function LandingScreen({ onStart, onLoadPersona }) {
         />
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button onClick={onStart}>Start assessment</Button>
-          <Button variant="secondary" onClick={() => window.print()}>
-            Preview print
-          </Button>
         </div>
       </section>
 
@@ -94,12 +92,12 @@ function PlaceholderPhase({ phase }) {
           <InfoCallout
             title="Questionnaire complete"
             tone="support"
-            message="No assessment has been calculated yet. Step 3 will connect these active answers to the financial engine."
+            message="The complete assessment now opens from the Results phase after the questionnaire is completed."
           />
         ) : (
           <InfoCallout
             title="Prepared for later steps"
-            message="This screen remains as a placeholder until the result and card experiences are implemented."
+            message="This screen remains as a placeholder until this phase is connected."
           />
         )}
       </Card>
@@ -145,6 +143,7 @@ export function App() {
   const canGoBack = state.phaseHistory.length > 0;
   const canGoNext = currentIndex < phaseSequence.length - 1;
   const isQuestionnairePhase = state.phase === PHASES.ESSENTIAL;
+  const showPhaseControls = !isQuestionnairePhase && state.phase !== PHASES.RESULTS;
 
   return (
     <PageShell>
@@ -162,7 +161,7 @@ export function App() {
           </p>
         </div>
 
-        {!isQuestionnairePhase ? (
+        {showPhaseControls ? (
           <ProgressIndicator
             current={progress.current}
             total={progress.total}
@@ -178,14 +177,16 @@ export function App() {
             />
           ) : isQuestionnairePhase ? (
             <QuestionnaireScreen />
+          ) : state.phase === PHASES.RESULTS ? (
+            <ResultsScreen />
           ) : (
             <PlaceholderPhase phase={state.phase} />
           )}
         </div>
       </main>
 
-      {!isQuestionnairePhase ? (
-        <div className="sticky bottom-0 border-t border-navy/10 bg-surface/95 px-4 py-3 shadow-soft backdrop-blur">
+      {showPhaseControls ? (
+        <div className="no-print sticky bottom-0 border-t border-navy/10 bg-surface/95 px-4 py-3 shadow-soft backdrop-blur">
           <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p aria-live="polite" className="text-sm font-medium text-navy/70">
               Current phase: {phaseLabels[state.phase]}
@@ -218,5 +219,4 @@ export function App() {
     </PageShell>
   );
 }
-
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { questions } from "../data/questions.js";
+import { PHASES } from "../app/routes.js";
 import {
   getActiveAnswers,
   getCurrentQuestion,
@@ -7,6 +8,7 @@ import {
   getVisibleQuestions,
   validateQuestion
 } from "../engine/questionEngine.js";
+import { runAssessment } from "../engine/assessmentEngine.js";
 import { useAssessment } from "../state/useAssessment.js";
 import { normalizeAnswer } from "../utils/normalizeAnswer.js";
 
@@ -14,6 +16,10 @@ function withoutError(errors, questionId) {
   const nextErrors = { ...errors };
   delete nextErrors[questionId];
   return nextErrors;
+}
+
+function findQuestionById(questionId) {
+  return questions.find((question) => question.id === questionId);
 }
 
 export function useQuestionnaire() {
@@ -39,6 +45,37 @@ export function useQuestionnaire() {
     dispatch({ type: "SET_ERRORS", payload: withoutError(state.errors, question.id) });
   };
 
+  const completeQuestionnaire = (questionId, normalizedValue) => {
+    const finalAnswers = {
+      ...state.answers,
+      [questionId]: normalizedValue
+    };
+    const finalActiveAnswers = getActiveAnswers(questions, finalAnswers);
+    const result = runAssessment(finalActiveAnswers);
+
+    if (!result.ok) {
+      const targetQuestion = result.error.field ? findQuestionById(result.error.field) : null;
+
+      if (targetQuestion) {
+        dispatch({ type: "SET_CURRENT_QUESTION", payload: targetQuestion.id });
+        dispatch({ type: "SET_PHASE", payload: PHASES.ESSENTIAL });
+        dispatch({ type: "SET_ERRORS", payload: { [targetQuestion.id]: result.error.message } });
+        return;
+      }
+
+      dispatch({ type: "SET_ASSESSMENT_ERROR", payload: result.error });
+      return;
+    }
+
+    dispatch({
+      type: "COMPLETE_QUESTIONNAIRE",
+      payload: {
+        answers: finalAnswers,
+        assessment: result.value
+      }
+    });
+  };
+
   const submitCurrentQuestion = (event) => {
     event?.preventDefault();
 
@@ -46,7 +83,7 @@ export function useQuestionnaire() {
       return;
     }
 
-    const value = state.answers[currentQuestion.id] ?? null;
+    const value = normalizeAnswer(currentQuestion, state.answers[currentQuestion.id] ?? null);
     const validation = validateQuestion(currentQuestion, value);
 
     if (!validation.isValid) {
@@ -57,15 +94,20 @@ export function useQuestionnaire() {
       return;
     }
 
-    const nextQuestion = getNextQuestion(visibleQuestions, currentQuestion.id);
+    const finalAnswers = {
+      ...state.answers,
+      [currentQuestion.id]: value
+    };
+    const nextQuestion = getNextQuestion(getVisibleQuestions(questions, finalAnswers), currentQuestion.id);
     dispatch({ type: "SET_ERRORS", payload: withoutError(state.errors, currentQuestion.id) });
 
     if (nextQuestion) {
+      dispatch({ type: "SET_ANSWER", payload: { id: currentQuestion.id, value } });
       dispatch({ type: "NEXT_QUESTION", payload: { nextQuestionId: nextQuestion.id } });
       return;
     }
 
-    dispatch({ type: "COMPLETE_QUESTIONNAIRE", payload: { activeAnswers } });
+    completeQuestionnaire(currentQuestion.id, value);
   };
 
   const goBack = () => {

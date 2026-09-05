@@ -7,6 +7,8 @@ export const initialState = Object.freeze({
   answers: {},
   errors: {},
   assessment: null,
+  assessmentStatus: "idle",
+  assessmentError: null,
   phaseHistory: [],
   questionHistory: [],
   completedQuestionIds: []
@@ -24,6 +26,9 @@ export function assessmentReducer(state, action) {
         phase: PHASES.ESSENTIAL,
         questionnaireStatus: "in_progress",
         currentQuestionId: "borrowingPurpose",
+        assessment: null,
+        assessmentStatus: "idle",
+        assessmentError: null,
         phaseHistory: [...state.phaseHistory, state.phase]
       };
 
@@ -86,11 +91,25 @@ export function assessmentReducer(state, action) {
     case "COMPLETE_QUESTIONNAIRE":
       return {
         ...state,
+        answers: action.payload.answers ?? state.answers,
         questionnaireStatus: "complete",
-        phase: PHASES.INITIAL_RESULT,
-        assessment: null,
+        phase: PHASES.RESULTS,
+        assessment: action.payload.assessment,
+        assessmentStatus: "ready",
+        assessmentError: null,
+        errors: {},
         phaseHistory: [...state.phaseHistory, state.phase],
         completedQuestionIds: addUnique(state.completedQuestionIds, state.currentQuestionId)
+      };
+
+    case "SET_ASSESSMENT_ERROR":
+      return {
+        ...state,
+        phase: PHASES.RESULTS,
+        assessment: null,
+        assessmentStatus: "error",
+        assessmentError: action.payload,
+        phaseHistory: state.phase === PHASES.RESULTS ? state.phaseHistory : [...state.phaseHistory, state.phase]
       };
 
     case "GO_BACK": {
@@ -122,7 +141,9 @@ export function assessmentReducer(state, action) {
     case "SET_ASSESSMENT":
       return {
         ...state,
-        assessment: action.payload
+        assessment: action.payload,
+        assessmentStatus: action.payload ? "ready" : "idle",
+        assessmentError: null
       };
 
     default:

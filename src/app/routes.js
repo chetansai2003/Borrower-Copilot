@@ -12,7 +12,7 @@ export const phaseLabels = Object.freeze({
   [PHASES.ESSENTIAL]: "Essential questions",
   [PHASES.INITIAL_RESULT]: "Initial result",
   [PHASES.REFINEMENT]: "Refinement",
-  [PHASES.RESULTS]: "Results",
+  [PHASES.RESULTS]: "Your borrowing assessment",
   [PHASES.CARD]: "Negotiation card"
 });
 
@@ -26,3 +26,4 @@ export const phaseSequence = Object.freeze([
 ]);
 
 export const isValidPhase = (phase) => Object.values(PHASES).includes(phase);
+

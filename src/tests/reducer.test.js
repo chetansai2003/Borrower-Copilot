@@ -9,6 +9,8 @@ describe("assessmentReducer", () => {
     expect(initialState.phase).toBe(PHASES.LANDING);
     expect(initialState.currentQuestionId).toBe("borrowingPurpose");
     expect(initialState.questionnaireStatus).toBe("in_progress");
+    expect(initialState.assessmentStatus).toBe("idle");
+    expect(initialState.assessmentError).toBeNull();
   });
 
   it("tracks phase history separately from question history", () => {
@@ -56,12 +58,34 @@ describe("assessmentReducer", () => {
     expect(back.questionHistory).toEqual([]);
   });
 
-  it("completes the questionnaire without creating an assessment", () => {
-    const state = assessmentReducer(withQuestionnaire, { type: "COMPLETE_QUESTIONNAIRE" });
+  it("atomically completes the questionnaire with answers and assessment", () => {
+    const assessment = { verdict: "BORROW" };
+    const answers = { borrowingPurpose: "home_repair", recentRepaymentDifficulty: "none" };
+    const state = assessmentReducer(withQuestionnaire, {
+      type: "COMPLETE_QUESTIONNAIRE",
+      payload: { answers, assessment }
+    });
 
+    expect(state.answers).toBe(answers);
+    expect(state.assessment).toBe(assessment);
     expect(state.questionnaireStatus).toBe("complete");
-    expect(state.phase).toBe(PHASES.INITIAL_RESULT);
+    expect(state.phase).toBe(PHASES.RESULTS);
+    expect(state.assessmentStatus).toBe("ready");
+    expect(state.assessmentError).toBeNull();
+    expect(state.errors).toEqual({});
+  });
+
+  it("stores assessment errors without fabricating an assessment", () => {
+    const error = { code: "INTERNAL", message: "Could not calculate." };
+    const state = assessmentReducer(withQuestionnaire, {
+      type: "SET_ASSESSMENT_ERROR",
+      payload: error
+    });
+
+    expect(state.phase).toBe(PHASES.RESULTS);
     expect(state.assessment).toBeNull();
+    expect(state.assessmentStatus).toBe("error");
+    expect(state.assessmentError).toBe(error);
   });
 
   it("loads a persona after clearing previous answers", () => {
@@ -77,9 +101,15 @@ describe("assessmentReducer", () => {
     expect(state.answers).toEqual({ borrowingPurpose: "business" });
     expect(state.currentQuestionId).toBe("borrowingPurpose");
     expect(state.phase).toBe(PHASES.ESSENTIAL);
+    expect(state.assessmentStatus).toBe("idle");
   });
 
   it("restores the exact initial state on restart", () => {
-    expect(assessmentReducer(withQuestionnaire, { type: "RESTART" })).toBe(initialState);
+    const completed = assessmentReducer(withQuestionnaire, {
+      type: "COMPLETE_QUESTIONNAIRE",
+      payload: { answers: { requestedAmount: 100000 }, assessment: { verdict: "BORROW" } }
+    });
+
+    expect(assessmentReducer(completed, { type: "RESTART" })).toBe(initialState);
   });
 });

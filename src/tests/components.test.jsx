@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "../app/App.jsx";
-import { AssessmentProvider } from "../state/AssessmentContext.jsx";
+import { PHASES } from "../app/routes.js";
+import { ResultsScreen } from "../components/results/ResultsScreen.jsx";
 import { CurrencyInput } from "../components/ui/CurrencyInput.jsx";
 import { Input } from "../components/ui/Input.jsx";
+import { personas } from "../data/personas.js";
+import { runAssessment } from "../engine/assessmentEngine.js";
+import { AssessmentContext } from "../state/assessmentContext.js";
+import { AssessmentProvider } from "../state/AssessmentContext.jsx";
+import { initialState } from "../state/reducer.js";
 
 function renderApp() {
   return render(
@@ -13,6 +19,30 @@ function renderApp() {
       <App />
     </AssessmentProvider>
   );
+}
+
+function personaAssessment(id) {
+  const persona = personas.find((item) => item.id === id);
+  return runAssessment(persona.answers).value;
+}
+
+function renderResults(assessment, stateOverrides = {}, dispatch = vi.fn()) {
+  const state = {
+    ...initialState,
+    phase: PHASES.RESULTS,
+    assessment,
+    assessmentStatus: assessment ? "ready" : "idle",
+    ...stateOverrides
+  };
+
+  return {
+    dispatch,
+    ...render(
+      <AssessmentContext.Provider value={{ state, dispatch }}>
+        <ResultsScreen />
+      </AssessmentContext.Provider>
+    )
+  };
 }
 
 async function answerSelect(user, label, option) {
@@ -33,6 +63,11 @@ async function answerCurrency(user, label, value) {
 describe("App shell and questionnaire", () => {
   beforeEach(() => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.spyOn(window, "print").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders the landing phase first", () => {
@@ -60,7 +95,7 @@ describe("App shell and questionnaire", () => {
     expect(amount).toHaveAccessibleDescription(/enter a requested amount greater than zero/i);
   });
 
-  it("completes the essential questionnaire and opens initial result without assessment output", async () => {
+  it("completes the questionnaire and opens the Results screen", async () => {
     const user = userEvent.setup();
     renderApp();
 
@@ -69,17 +104,39 @@ describe("App shell and questionnaire", () => {
     await answerCurrency(user, /how much do you want to borrow/i, "100000");
     await answerSelect(user, /what repayment tenure are you considering/i, "24");
     await answerRadio(user, /salaried/i);
-    await answerCurrency(user, /average monthly take-home income/i, "50000");
+    await answerCurrency(user, /average monthly take-home income/i, "150000");
     await answerRadio(user, /mostly stable/i);
-    await user.click(screen.getByRole("button", { name: /i do not know/i }));
-    await user.click(screen.getByRole("button", { name: /continue/i }));
+    await answerCurrency(user, /essential household expenses/i, "45000");
     await answerCurrency(user, /already pay each month/i, "0");
-    await answerRadio(user, /i do not know/i);
+    await answerRadio(user, /about 3 months/i);
     await user.click(screen.getByLabelText(/no recent difficulty/i));
     await user.click(screen.getByRole("button", { name: /complete questionnaire/i }));
 
-    expect(screen.getByRole("heading", { name: /initial result/i, level: 1 })).toHaveFocus();
-    expect(screen.getByText(/no assessment has been calculated yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /your borrowing assessment/i, level: 1 })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: /this amount appears manageable/i })).toBeInTheDocument();
+    expect(screen.getByText(/all-in apr estimate/i)).toBeInTheDocument();
+  });
+
+  it("sends the final questionnaire answer into the assessment engine", async () => {
+    const user = userEvent.setup();
+    renderApp();
+
+    await user.click(screen.getByRole("button", { name: /start assessment/i }));
+    await answerSelect(user, /what will this borrowing be used for/i, "home_repair");
+    await answerCurrency(user, /how much do you want to borrow/i, "100000");
+    await answerSelect(user, /what repayment tenure are you considering/i, "24");
+    await answerRadio(user, /salaried/i);
+    await answerCurrency(user, /average monthly take-home income/i, "150000");
+    await answerRadio(user, /mostly stable/i);
+    await answerCurrency(user, /essential household expenses/i, "45000");
+    await answerCurrency(user, /already pay each month/i, "0");
+    await answerRadio(user, /about 3 months/i);
+    await answerRadio(user, /bank bounce/i);
+    await user.click(screen.getByLabelText(/in the last 30 days/i));
+    await user.click(screen.getByRole("button", { name: /complete questionnaire/i }));
+
+    expect(screen.getByRole("heading", { name: /borrowing is not recommended right now/i })).toBeInTheDocument();
+    expect(screen.getByText(/a repayment bounce was reported within the last 30 days/i)).toBeInTheDocument();
   });
 
   it("shows relevant follow-up questions and Back retains answers", async () => {
@@ -114,6 +171,131 @@ describe("App shell and questionnaire", () => {
 
     expect(window.confirm).toHaveBeenCalledWith("Restart and clear the answers from this page?");
     expect(screen.getByRole("heading", { name: /welcome/i, level: 1 })).toBeInTheDocument();
+  });
+});
+
+describe("Results screen", () => {
+  beforeEach(() => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    vi.spyOn(window, "print").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("shows insufficient-data copy instead of unaffordability copy", () => {
+    const assessment = runAssessment({ requestedAmount: 100000 }).value;
+    renderResults(assessment);
+
+    expect(screen.getByRole("heading", { name: /we cannot make a safe recommendation yet/i })).toBeInTheDocument();
+    expect(screen.queryByText(/place your essential expenses at risk/i)).not.toBeInTheDocument();
+  });
+
+  it("shows null recommended amount without displaying zero", () => {
+    renderResults(personaAssessment("anita"));
+
+    expect(screen.getAllByText(/no borrowing amount is currently recommended/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText("?0")).not.toBeInTheDocument();
+  });
+
+  it("does not render invalid numeric values as NaN or Infinity", () => {
+    const assessment = {
+      ...personaAssessment("priya"),
+      recommendedAmount: Number.NaN,
+      aprBand: { minimum: Number.NaN, maximum: Number.POSITIVE_INFINITY },
+      feeSummary: null
+    };
+    const { container } = renderResults(assessment);
+
+    expect(container.textContent).not.toContain("NaN");
+    expect(container.textContent).not.toContain("Infinity");
+  });
+
+  it("does not crash when optional assessment arrays are missing", () => {
+    const assessment = {
+      ...personaAssessment("priya"),
+      risks: undefined,
+      missingInformation: undefined,
+      confidenceReasons: undefined,
+      explanations: undefined,
+      negotiationPoints: undefined,
+      tenureComparison: undefined
+    };
+
+    renderResults(assessment);
+    expect(screen.getByRole("heading", { name: /this amount appears manageable/i })).toBeInTheDocument();
+  });
+
+  it("shows Priya, Ravi and Anita verdict copy", () => {
+    const { rerender } = render(
+      <AssessmentContext.Provider value={{ state: { ...initialState, phase: PHASES.RESULTS, assessment: personaAssessment("priya"), assessmentStatus: "ready" }, dispatch: vi.fn() }}>
+        <ResultsScreen />
+      </AssessmentContext.Provider>
+    );
+
+    expect(screen.getByRole("heading", { name: /this amount appears manageable/i })).toBeInTheDocument();
+
+    rerender(
+      <AssessmentContext.Provider value={{ state: { ...initialState, phase: PHASES.RESULTS, assessment: personaAssessment("ravi"), assessmentStatus: "ready" }, dispatch: vi.fn() }}>
+        <ResultsScreen />
+      </AssessmentContext.Provider>
+    );
+    expect(screen.getByRole("heading", { name: /a smaller loan would be safer/i })).toBeInTheDocument();
+
+    rerender(
+      <AssessmentContext.Provider value={{ state: { ...initialState, phase: PHASES.RESULTS, assessment: personaAssessment("anita"), assessmentStatus: "ready" }, dispatch: vi.fn() }}>
+        <ResultsScreen />
+      </AssessmentContext.Provider>
+    );
+    expect(screen.getByRole("heading", { name: /borrowing is not recommended right now/i })).toBeInTheDocument();
+  });
+
+  it("places APR before advertised interest in semantic order", () => {
+    renderResults(personaAssessment("priya"));
+
+    const aprHeading = screen.getByRole("heading", { name: /all-in apr estimate/i });
+    const interestHeading = screen.getByRole("heading", { name: /advertised interest-rate estimate/i });
+    expect(aprHeading.compareDocumentPosition(interestHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("gives the comparison bar an accessible text equivalent", () => {
+    renderResults(personaAssessment("priya"));
+
+    expect(screen.getByRole("img", { name: /requested amount .* borrower-safe amount .* lender-likely estimate/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/not an approval estimate or safety recommendation/i).length).toBeGreaterThan(0);
+  });
+
+  it("prints the negotiation card and includes required disclaimers", async () => {
+    const user = userEvent.setup();
+    renderResults(personaAssessment("priya"));
+
+    expect(screen.getByText(/educational affordability estimate, not a loan approval/i)).toBeInTheDocument();
+    expect(screen.getByText(/share it only with people or institutions you trust/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /print negotiation card/i }));
+    expect(window.print).toHaveBeenCalled();
+  });
+
+  it("restart dispatches a full restart after confirmation", async () => {
+    const user = userEvent.setup();
+    const dispatch = vi.fn();
+    renderResults(personaAssessment("priya"), { answers: { requestedAmount: 100000 } }, dispatch);
+
+    await user.click(screen.getByRole("button", { name: /restart/i }));
+
+    expect(window.confirm).toHaveBeenCalledWith("Restart and clear the answers from this page?");
+    expect(dispatch).toHaveBeenCalledWith({ type: "RESTART" });
+  });
+
+  it("does not show a fabricated verdict when assessment generation fails", () => {
+    renderResults(null, {
+      assessmentStatus: "error",
+      assessmentError: { code: "INTERNAL", message: "Calculation failed." }
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/we could not generate the result/i);
+    expect(screen.queryByText(/this amount appears manageable/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/a smaller loan would be safer/i)).not.toBeInTheDocument();
   });
 });
 
@@ -164,6 +346,5 @@ describe("Reusable form components", () => {
     expect(handleValueChange).toHaveBeenLastCalledWith(50000);
   });
 });
-
 
 
