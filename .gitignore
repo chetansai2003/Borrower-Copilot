@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+.env
+.env.local
+npm-debug.log*
+Borrower_Copilot_End_to_End_Architecture
