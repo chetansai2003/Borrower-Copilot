@@ -1,3 +1,5 @@
+import { REPAYMENT_DIFFICULTY_TYPES } from "./constants.js";
+
 export const rules = Object.freeze({
   affordability: Object.freeze({
     safeDebtRatio: 0.35,
@@ -43,11 +45,11 @@ export const rules = Object.freeze({
         unknown: Object.freeze({ minimum: 0.5, maximum: 1.5 })
       }),
       repaymentDifficulty: Object.freeze({
-        none: Object.freeze({ minimum: 0, maximum: 0 }),
-        missed_payment: Object.freeze({ minimum: 1.5, maximum: 3 }),
-        bounce: Object.freeze({ minimum: 2, maximum: 4 }),
-        collection: Object.freeze({ minimum: 3, maximum: 6 }),
-        unknown: Object.freeze({ minimum: 0.75, maximum: 2 })
+        [REPAYMENT_DIFFICULTY_TYPES.NONE]: Object.freeze({ minimum: 0, maximum: 0 }),
+        [REPAYMENT_DIFFICULTY_TYPES.LATE_PAYMENT]: Object.freeze({ minimum: 1.5, maximum: 3 }),
+        [REPAYMENT_DIFFICULTY_TYPES.BOUNCE]: Object.freeze({ minimum: 2, maximum: 4 }),
+        [REPAYMENT_DIFFICULTY_TYPES.COLLECTION]: Object.freeze({ minimum: 3, maximum: 6 }),
+        [REPAYMENT_DIFFICULTY_TYPES.UNKNOWN]: Object.freeze({ minimum: 0.75, maximum: 2 })
       }),
       purpose: Object.freeze({
         home_repair: Object.freeze({ minimum: 0, maximum: 0.5 }),
@@ -84,5 +86,18 @@ export const rules = Object.freeze({
     lowerMonthlyRate: 0,
     upperMonthlyRate: 1
   }),
+  assessment: Object.freeze({
+    minimumSafeEmi: 1000,
+    minimumBorrowerSafeAmount: 25000,
+    requestedAmountToleranceRate: 0.02,
+    seriousStressDebtRatio: 0.55,
+    minimumStressSurplus: 0,
+    confidenceThresholds: Object.freeze({
+      highMaximumPenalty: 1,
+      mediumMaximumPenalty: 3
+    })
+  }),
   tenureOptions: Object.freeze([12, 24, 36, 48, 60, 84])
 });
+
+

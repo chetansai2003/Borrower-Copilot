@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { REPAYMENT_DIFFICULTY_TYPES } from "./constants.js";
 
 const requiredChoice = (message) => z.string({ message }).min(1, message);
 const positiveNumber = (message) => z.number({ message }).positive(message);
@@ -159,10 +160,10 @@ export const questions = [
     required: true,
     unknownAllowed: true,
     options: [
-      { value: "none", label: "No recent difficulty" },
-      { value: "missed_payment", label: "Missed or late payment" },
-      { value: "bounce", label: "Bank bounce or failed auto-debit" },
-      { value: "collection", label: "Collection calls or settlement pressure" }
+      { value: REPAYMENT_DIFFICULTY_TYPES.NONE, label: "No recent difficulty" },
+      { value: REPAYMENT_DIFFICULTY_TYPES.LATE_PAYMENT, label: "Missed or late payment" },
+      { value: REPAYMENT_DIFFICULTY_TYPES.BOUNCE, label: "Bank bounce or failed auto-debit" },
+      { value: REPAYMENT_DIFFICULTY_TYPES.COLLECTION, label: "Collection calls or settlement pressure" }
     ],
     schema: requiredChoice("Choose the repayment difficulty status."),
     appliesWhen: () => true,
@@ -227,8 +228,8 @@ export const questions = [
     schema: requiredChoice("Choose when the difficulty happened."),
     appliesWhen: (answers) =>
       Boolean(answers.recentRepaymentDifficulty) &&
-      answers.recentRepaymentDifficulty !== "none" &&
-      answers.recentRepaymentDifficulty !== "unknown",
+      answers.recentRepaymentDifficulty !== REPAYMENT_DIFFICULTY_TYPES.NONE &&
+      answers.recentRepaymentDifficulty !== REPAYMENT_DIFFICULTY_TYPES.UNKNOWN,
     impactAreas: ["risk", "confidence"]
   },
   {
@@ -266,3 +267,6 @@ export const questions = [
     impactAreas: ["purposeRisk", "productRoute"]
   }
 ];
+
+
+
