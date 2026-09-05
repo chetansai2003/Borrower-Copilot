@@ -2,12 +2,19 @@ import { PHASES, isValidPhase } from "../app/routes.js";
 
 export const initialState = Object.freeze({
   phase: PHASES.LANDING,
+  questionnaireStatus: "in_progress",
+  currentQuestionId: "borrowingPurpose",
   answers: {},
-  currentQuestionId: null,
-  completedQuestionIds: [],
+  errors: {},
   assessment: null,
-  navigationHistory: []
+  phaseHistory: [],
+  questionHistory: [],
+  completedQuestionIds: []
 });
+
+function addUnique(values, value) {
+  return values.includes(value) ? values : [...values, value];
+}
 
 export function assessmentReducer(state, action) {
   switch (action.type) {
@@ -15,7 +22,9 @@ export function assessmentReducer(state, action) {
       return {
         ...state,
         phase: PHASES.ESSENTIAL,
-        navigationHistory: [...state.navigationHistory, state.phase]
+        questionnaireStatus: "in_progress",
+        currentQuestionId: "borrowingPurpose",
+        phaseHistory: [...state.phaseHistory, state.phase]
       };
 
     case "SET_PHASE": {
@@ -26,9 +35,15 @@ export function assessmentReducer(state, action) {
       return {
         ...state,
         phase: action.payload,
-        navigationHistory: [...state.navigationHistory, state.phase]
+        phaseHistory: [...state.phaseHistory, state.phase]
       };
     }
+
+    case "SET_CURRENT_QUESTION":
+      return {
+        ...state,
+        currentQuestionId: action.payload
+      };
 
     case "SET_ANSWER":
       return {
@@ -39,22 +54,70 @@ export function assessmentReducer(state, action) {
         }
       };
 
-    case "GO_BACK": {
-      if (state.navigationHistory.length === 0) {
+    case "NEXT_QUESTION":
+      return {
+        ...state,
+        currentQuestionId: action.payload.nextQuestionId,
+        questionHistory: [...state.questionHistory, state.currentQuestionId],
+        completedQuestionIds: addUnique(state.completedQuestionIds, state.currentQuestionId)
+      };
+
+    case "PREVIOUS_QUESTION": {
+      if (!action.payload?.previousQuestionId) {
         return state;
       }
 
-      const previousPhase = state.navigationHistory[state.navigationHistory.length - 1];
+      const previousIndex = state.questionHistory.lastIndexOf(action.payload.previousQuestionId);
+      const nextHistory = previousIndex >= 0 ? state.questionHistory.slice(0, previousIndex) : state.questionHistory.slice(0, -1);
+
+      return {
+        ...state,
+        currentQuestionId: action.payload.previousQuestionId,
+        questionHistory: nextHistory
+      };
+    }
+
+    case "SET_ERRORS":
+      return {
+        ...state,
+        errors: action.payload
+      };
+
+    case "COMPLETE_QUESTIONNAIRE":
+      return {
+        ...state,
+        questionnaireStatus: "complete",
+        phase: PHASES.INITIAL_RESULT,
+        assessment: null,
+        phaseHistory: [...state.phaseHistory, state.phase],
+        completedQuestionIds: addUnique(state.completedQuestionIds, state.currentQuestionId)
+      };
+
+    case "GO_BACK": {
+      if (state.phaseHistory.length === 0) {
+        return state;
+      }
+
+      const previousPhase = state.phaseHistory[state.phaseHistory.length - 1];
 
       return {
         ...state,
         phase: previousPhase,
-        navigationHistory: state.navigationHistory.slice(0, -1)
+        phaseHistory: state.phaseHistory.slice(0, -1)
       };
     }
 
+    case "RESTART":
     case "RESET_ASSESSMENT":
       return initialState;
+
+    case "LOAD_PERSONA":
+      return {
+        ...initialState,
+        phase: PHASES.ESSENTIAL,
+        answers: action.payload.answers ?? {},
+        phaseHistory: [PHASES.LANDING]
+      };
 
     case "SET_ASSESSMENT":
       return {

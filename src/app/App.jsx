@@ -1,25 +1,23 @@
 import { useEffect, useMemo, useRef } from "react";
 import { PHASES, phaseLabels, phaseSequence } from "./routes.js";
+import { personas } from "../data/personas.js";
 import { useAssessment } from "../state/useAssessment.js";
 import { PageShell } from "../components/layout/PageShell.jsx";
+import { QuestionnaireScreen } from "../components/questions/QuestionnaireScreen.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Card } from "../components/ui/Card.jsx";
 import { ConfidenceBadge } from "../components/ui/ConfidenceBadge.jsx";
-import { CurrencyInput } from "../components/ui/CurrencyInput.jsx";
 import { InfoCallout } from "../components/ui/InfoCallout.jsx";
-import { Input } from "../components/ui/Input.jsx";
 import { ProgressIndicator } from "../components/ui/ProgressIndicator.jsx";
-import { RadioGroup } from "../components/ui/RadioGroup.jsx";
 import { SectionHeader } from "../components/ui/SectionHeader.jsx";
-import { Select } from "../components/ui/Select.jsx";
 
 const phaseDescriptions = {
   [PHASES.LANDING]:
     "A private borrower-side workspace for checking whether the next loan conversation is worth having.",
   [PHASES.ESSENTIAL]:
-    "A short first pass will collect only the answers needed to produce a useful estimate.",
+    "A short first pass collects only the answers needed to prepare a useful estimate.",
   [PHASES.INITIAL_RESULT]:
-    "Early ranges will appear here once the essential answers are complete.",
+    "Your answers are captured. The financial assessment engine will be connected in the next step.",
   [PHASES.REFINEMENT]:
     "Follow-up questions will appear only when they can improve confidence or change an output.",
   [PHASES.RESULTS]:
@@ -28,14 +26,14 @@ const phaseDescriptions = {
     "The lender conversation summary will fit on one mobile-friendly, printable page."
 };
 
-function LandingScreen({ onStart }) {
+function LandingScreen({ onStart, onLoadPersona }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
       <section className="space-y-6">
         <SectionHeader
           eyebrow="Borrower Copilot"
           title="Know your safer borrowing range before you speak to a lender."
-          description="A calm self-assessment shell for checking amount, EMI, pricing, and lender questions. Financial logic arrives in the next implementation step."
+          description="Answer a short, private questionnaire. Follow-up questions appear only when they can improve the later result."
         />
         <InfoCallout
           title="Privacy first"
@@ -52,33 +50,37 @@ function LandingScreen({ onStart }) {
 
       <Card className="space-y-5">
         <div>
-          <p className="text-sm font-semibold uppercase text-teal">
-            Step 1 foundation
-          </p>
+          <p className="text-sm font-semibold uppercase text-teal">Questionnaire ready</p>
           <h2 className="mt-2 text-2xl font-semibold text-navy">
-            Built for the full challenge flow
+            One question at a time
           </h2>
+          <p className="mt-2 text-sm leading-6 text-navy/70">
+            You can go back, change an answer, and the follow-up path updates without losing answers from this page.
+          </p>
         </div>
-        <div className="grid gap-3">
-          {["Borrow / borrow less / do not borrow", "Safe EMI and amount range", "Fair rate and all-in APR", "Negotiation Card"].map(
-            (item) => (
-              <div
-                key={item}
-                className="rounded-lg border border-navy/10 bg-background/70 px-4 py-3 text-sm font-medium text-navy"
-              >
-                {item}
-              </div>
-            )
-          )}
-        </div>
+        {import.meta.env.DEV ? (
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-navy">Try an example profile</p>
+            <div className="grid gap-2">
+              {personas.map((persona) => (
+                <Button
+                  key={persona.id}
+                  variant="secondary"
+                  onClick={() => onLoadPersona(persona)}
+                  className="justify-start text-left"
+                >
+                  {persona.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </Card>
     </div>
   );
 }
 
 function PlaceholderPhase({ phase }) {
-  const isQuestionPhase = phase === PHASES.ESSENTIAL || phase === PHASES.REFINEMENT;
-
   return (
     <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
       <Card className="space-y-4">
@@ -88,61 +90,26 @@ function PlaceholderPhase({ phase }) {
           title={`${phaseLabels[phase]} preview`}
           description={phaseDescriptions[phase]}
         />
-        <InfoCallout
-          title="Prepared for the next step"
-          message="The screen structure is in place so the upcoming questions and calculations can be added without changing the navigation foundation."
-        />
+        {phase === PHASES.INITIAL_RESULT ? (
+          <InfoCallout
+            title="Questionnaire complete"
+            tone="support"
+            message="No assessment has been calculated yet. Step 3 will connect these active answers to the financial engine."
+          />
+        ) : (
+          <InfoCallout
+            title="Prepared for later steps"
+            message="This screen remains as a placeholder until the result and card experiences are implemented."
+          />
+        )}
       </Card>
 
-      <Card className="space-y-5">
-        {isQuestionPhase ? (
-          <>
-            <Input
-              id="sample-income"
-              label="Sample labelled input"
-              helperText="This demonstrates accessible helper and error wiring."
-              placeholder="Example only"
-            />
-            <CurrencyInput
-              id="sample-currency"
-              label="Sample currency input"
-              helperText="Formatted for reading, stored as a number for state."
-              value={50000}
-              onValueChange={() => {}}
-            />
-            <Select
-              id="sample-select"
-              label="Sample select"
-              helperText="The component is ready for Zod-backed validation."
-              options={[
-                { value: "", label: "Choose an option" },
-                { value: "salaried", label: "Salaried" },
-                { value: "self_employed", label: "Self-employed" }
-              ]}
-            />
-            <RadioGroup
-              name="sample-radio"
-              label="Sample radio group"
-              helperText="Radio choices keep large touch targets for mobile."
-              options={[
-                { value: "known", label: "Known" },
-                { value: "unknown", label: "Unknown" }
-              ]}
-            />
-          </>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {["Recommended cap", "Safe EMI", "Fair rate", "APR"].map((label) => (
-              <div
-                key={label}
-                className="min-h-28 rounded-lg border border-navy/10 bg-background/70 p-4"
-              >
-                <p className="text-sm font-semibold text-navy/70">{label}</p>
-                <p className="mt-4 text-2xl font-semibold text-navy">Pending</p>
-              </div>
-            ))}
-          </div>
-        )}
+      <Card className="space-y-4">
+        <p className="text-sm font-semibold text-navy/70">Assessment status</p>
+        <p className="text-2xl font-semibold text-navy">Pending</p>
+        <p className="text-sm leading-6 text-navy/70">
+          The questionnaire stores answers in React memory only. Refreshing this page clears personal answers.
+        </p>
       </Card>
     </div>
   );
@@ -163,7 +130,9 @@ export function App() {
   );
 
   useEffect(() => {
-    headingRef.current?.focus();
+    if (state.phase !== PHASES.ESSENTIAL) {
+      headingRef.current?.focus();
+    }
   }, [state.phase]);
 
   const goNext = () => {
@@ -173,8 +142,9 @@ export function App() {
     }
   };
 
-  const canGoBack = state.navigationHistory.length > 0;
+  const canGoBack = state.phaseHistory.length > 0;
   const canGoNext = currentIndex < phaseSequence.length - 1;
+  const isQuestionnairePhase = state.phase === PHASES.ESSENTIAL;
 
   return (
     <PageShell>
@@ -192,48 +162,61 @@ export function App() {
           </p>
         </div>
 
-        <ProgressIndicator
-          current={progress.current}
-          total={progress.total}
-          label={progress.label}
-        />
+        {!isQuestionnairePhase ? (
+          <ProgressIndicator
+            current={progress.current}
+            total={progress.total}
+            label={progress.label}
+          />
+        ) : null}
 
         <div className="mt-6">
           {state.phase === PHASES.LANDING ? (
             <LandingScreen
-              onStart={() => dispatch({ type: "SET_PHASE", payload: PHASES.ESSENTIAL })}
+              onStart={() => dispatch({ type: "START_ASSESSMENT" })}
+              onLoadPersona={(persona) => dispatch({ type: "LOAD_PERSONA", payload: persona })}
             />
+          ) : isQuestionnairePhase ? (
+            <QuestionnaireScreen />
           ) : (
             <PlaceholderPhase phase={state.phase} />
           )}
         </div>
       </main>
 
-      <div className="sticky bottom-0 border-t border-navy/10 bg-surface/95 px-4 py-3 shadow-soft backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p aria-live="polite" className="text-sm font-medium text-navy/70">
-            Current phase: {phaseLabels[state.phase]}
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => dispatch({ type: "GO_BACK" })}
-              disabled={!canGoBack}
-            >
-              Back
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => dispatch({ type: "RESET_ASSESSMENT" })}
-            >
-              Reset
-            </Button>
-            <Button onClick={goNext} disabled={!canGoNext}>
-              Next preview
-            </Button>
+      {!isQuestionnairePhase ? (
+        <div className="sticky bottom-0 border-t border-navy/10 bg-surface/95 px-4 py-3 shadow-soft backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p aria-live="polite" className="text-sm font-medium text-navy/70">
+              Current phase: {phaseLabels[state.phase]}
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => dispatch({ type: "GO_BACK" })}
+                disabled={!canGoBack}
+              >
+                Back
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (Object.keys(state.answers).length === 0 || window.confirm("Restart and clear the answers from this page?")) {
+                    dispatch({ type: "RESTART" });
+                  }
+                }}
+              >
+                Reset
+              </Button>
+              <Button onClick={goNext} disabled={!canGoNext}>
+                Next preview
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
     </PageShell>
   );
 }
+
+
