@@ -24,7 +24,8 @@ Loan conversations often start with the amount a lender may be willing to offer,
 - Deterministic assessment engine with exactly three verdicts: `BORROW`, `BORROW_LESS`, `DO_NOT_BORROW`.
 - Accessible Results screen with explanations for important numbers.
 - Printable Negotiation Card using `window.print()` and print CSS.
-- Demo personas: Priya, Ravi, and Anita.
+- Demo personas: Priya, Ravi, and Anita, available in both development and production with clearly labelled example data.
+- Responsive layouts, a three-stage progress indicator, keyboard-accessible controls, and expandable calculation explanations.
 - Vitest coverage for routing, reducer behavior, questionnaire rules, financial calculations, assessment decisions, result formatting, and UI behavior.
 
 ## Technology Stack
@@ -40,6 +41,10 @@ Loan conversations often start with the amount a lender may be willing to offer,
 - lucide-react icons
 
 ## Run Locally
+
+The welcome screen offers a fresh assessment or an example profile. Example profiles prefill the questionnaire so reviewers can inspect and change the answers before generating results.
+
+For development-only placeholder screens, open the dev server with `?preview` in the URL and expand **Development previews**. These controls are excluded from production builds.
 
 Install dependencies:
 

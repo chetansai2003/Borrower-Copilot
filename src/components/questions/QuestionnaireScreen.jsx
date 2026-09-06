@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { ArrowLeft, ArrowRight, RotateCcw, ShieldCheck } from "lucide-react";
 import { useQuestionnaire } from "../../hooks/useQuestionnaire.js";
 import { Button } from "../ui/Button.jsx";
 import { Card } from "../ui/Card.jsx";
@@ -82,12 +83,14 @@ export function QuestionnaireScreen() {
     error,
     goBack,
     hasPreviousQuestion,
+    possibleFollowUps,
     progress,
     restart,
     setAnswer,
     state,
     submitCurrentQuestion,
-    totalQuestions
+    totalQuestions,
+    visibleQuestions
   } = useQuestionnaire();
   const questionHeadingRef = useRef(null);
 
@@ -112,10 +115,17 @@ export function QuestionnaireScreen() {
 
   const currentValue = state.answers[currentQuestion.id] ?? null;
   const isUnknown = currentValue === "unknown";
+  const visibleFollowUps = visibleQuestions.filter((question) => question.tier === "follow_up");
+  const currentFollowUpTrigger = possibleFollowUps.find((item) => item.id === currentQuestion.id)?.triggerSummary;
 
   return (
-    <form onSubmit={submitCurrentQuestion} className="space-y-6" noValidate>
-      <Card className="space-y-6">
+    <form onSubmit={submitCurrentQuestion} className="questionnaire" noValidate>
+      <Card className="question-panel space-y-6">
+        <ProgressIndicator
+          current={currentStep + 1}
+          total={totalQuestions}
+          label={`Question ${currentStep + 1} of ${totalQuestions}`}
+        />
         <div className="space-y-2">
           <p className="text-sm font-semibold uppercase text-teal">
             {currentQuestion.tier === "essential" ? "Essential" : "Follow-up"}
@@ -123,28 +133,22 @@ export function QuestionnaireScreen() {
           <h2
             ref={questionHeadingRef}
             tabIndex="-1"
-            className="text-2xl font-semibold leading-tight text-navy outline-none sm:text-3xl"
+            className="question-title text-2xl font-semibold leading-tight text-navy outline-none"
           >
             {currentQuestion.label}
           </h2>
-          <p className="text-sm text-navy/70">
-            Question {currentStep + 1} of {totalQuestions}
-          </p>
         </div>
 
-        <ProgressIndicator
-          current={currentStep + 1}
-          total={totalQuestions}
-          label={`Question ${currentStep + 1} of ${totalQuestions}`}
-        />
 
-        <InfoCallout
-          tone="support"
-          title="Why we ask"
-          message={currentQuestion.helperText}
-        />
+        {currentQuestion.tier === "follow_up" && currentFollowUpTrigger ? (
+          <InfoCallout
+            tone="caution"
+            title="Why this follow-up appeared"
+            message={`This question was added because of your answer about ${currentFollowUpTrigger.toLowerCase()}.`}
+          />
+        ) : null}
 
-        <div aria-live="polite" className="space-y-3">
+        <div className="question-control space-y-3">
           <QuestionControl
             question={currentQuestion}
             value={currentValue}
@@ -173,29 +177,57 @@ export function QuestionnaireScreen() {
         </div>
       </Card>
 
-      <div className="rounded-lg border border-navy/10 bg-surface p-4 shadow-soft">
-        <p className="mb-3 text-sm text-navy/70">
-          A few additional questions may appear based on your answers.
-        </p>
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+      <div className="question-actions">
+        <div className="followup-note space-y-3 text-sm text-navy/70">
+          <p>
+            Follow-up questions appear only when an answer makes them relevant.
+            {visibleFollowUps.length > 0
+              ? ` ${visibleFollowUps.length} follow-up${visibleFollowUps.length === 1 ? " is" : "s are"} active for this path.`
+              : " None are active yet."}
+          </p>
+          <details className="followup-details">
+          <summary>What can add a follow-up?</summary>
+          <div aria-label="Possible follow-up triggers" className="mt-3 flex flex-wrap gap-2">
+            {possibleFollowUps.map((item) => {
+              const isActive = visibleFollowUps.some((question) => question.id === item.id);
+
+              return (
+                <span
+                  key={item.id}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    isActive
+                      ? "border-teal bg-teal/10 text-teal"
+                      : "border-navy/10 bg-background text-navy/65"
+                  }`}
+                >
+                  {item.triggerSummary}
+                </span>
+              );
+            })}
+          </div>
+          </details>
+        </div>
+        <div className="question-buttons">
           <Button
             type="button"
             variant="secondary"
             onClick={goBack}
             disabled={!hasPreviousQuestion}
           >
-            Back
+            <ArrowLeft size={16} aria-hidden="true" /> Back
           </Button>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="question-forward">
             <Button type="button" variant="secondary" onClick={restart}>
-              Reset
+              <RotateCcw size={16} aria-hidden="true" /> Reset
             </Button>
             <Button type="submit">
               {currentStep + 1 === totalQuestions ? "Complete questionnaire" : "Continue"}
+              <ArrowRight size={16} aria-hidden="true" />
             </Button>
           </div>
         </div>
       </div>
+      <p className="question-privacy"><ShieldCheck size={15} aria-hidden="true" /> Your answers stay on this page.</p>
       <span className="sr-only" aria-live="polite">
         Progress {Math.round(progress)} percent
       </span>

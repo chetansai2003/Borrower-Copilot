@@ -108,7 +108,7 @@ describe("App shell and questionnaire", () => {
     await answerRadio(user, /mostly stable/i);
     await answerCurrency(user, /essential household expenses/i, "45000");
     await answerCurrency(user, /already pay each month/i, "0");
-    await answerRadio(user, /about 3 months/i);
+    await answerCurrency(user, /how much emergency savings/i, "135000");
     await user.click(screen.getByLabelText(/no recent difficulty/i));
     await user.click(screen.getByRole("button", { name: /complete questionnaire/i }));
 
@@ -130,7 +130,7 @@ describe("App shell and questionnaire", () => {
     await answerRadio(user, /mostly stable/i);
     await answerCurrency(user, /essential household expenses/i, "45000");
     await answerCurrency(user, /already pay each month/i, "0");
-    await answerRadio(user, /about 3 months/i);
+    await answerCurrency(user, /how much emergency savings/i, "135000");
     await answerRadio(user, /bank bounce/i);
     await user.click(screen.getByLabelText(/in the last 30 days/i));
     await user.click(screen.getByRole("button", { name: /complete questionnaire/i }));
@@ -144,6 +144,11 @@ describe("App shell and questionnaire", () => {
     renderApp();
 
     await user.click(screen.getByRole("button", { name: /start assessment/i }));
+
+    expect(screen.getByText(/follow-up questions appear only when an answer makes them relevant/i)).toBeInTheDocument();
+    expect(screen.getByText(/none are active yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/irregular or seasonal income/i)).toBeInTheDocument();
+    expect(screen.getByText(/self-employed or business income/i)).toBeInTheDocument();
     await answerSelect(user, /what will this borrowing be used for/i, "business");
     await answerCurrency(user, /how much do you want to borrow/i, "200000");
     await answerSelect(user, /what repayment tenure are you considering/i, "12");
@@ -152,7 +157,7 @@ describe("App shell and questionnaire", () => {
     await answerRadio(user, /irregular or seasonal/i);
     await answerCurrency(user, /essential household expenses/i, "25000");
     await answerCurrency(user, /already pay each month/i, "5000");
-    await answerRadio(user, /about 1 month/i);
+    await answerCurrency(user, /how much emergency savings/i, "25000");
     await user.click(screen.getByLabelText(/bank bounce/i));
     await user.click(screen.getByRole("button", { name: /continue/i }));
 

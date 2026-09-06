@@ -15,7 +15,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`min-h-11 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${variants[variant]} ${className}`}
+      className={`app-button inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

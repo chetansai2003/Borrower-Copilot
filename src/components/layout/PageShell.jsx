@@ -1,21 +1,28 @@
-export function PageShell({ children }) {
+import { Check, Compass, LockKeyhole } from "lucide-react";
+import { PHASES } from "../../app/routes.js";
+
+export function PageShell({ children, phase = PHASES.LANDING }) {
+  const currentStep = phase === PHASES.LANDING ? 0 : phase === PHASES.ESSENTIAL ? 1 : 2;
   return (
-    <div className="min-h-screen min-w-80 overflow-x-hidden bg-background text-navy">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-navy focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
-      >
-        Skip to content
-      </a>
-      <header className="border-b border-navy/10 bg-surface/80 backdrop-blur">
-        <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <span className="text-base font-semibold text-navy">Borrower Copilot</span>
-          <span className="rounded-full bg-teal/10 px-3 py-1 text-sm font-semibold text-teal">
-            Private preview
-          </span>
+    <div className="app-shell">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-navy focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-white">Skip to content</a>
+      <header className="app-header no-print">
+        <div className="header-inner">
+          <div className="brand"><span className="brand-mark"><Compass size={24} aria-hidden="true" /></span><span>Borrower<span className="brand-light"> Copilot</span></span></div>
+          <span className="header-privacy"><LockKeyhole size={14} aria-hidden="true" /> Private by design</span>
         </div>
       </header>
+      <section className="journey-band no-print" aria-label="Your progress">
+        <ol className="journey" aria-label="Assessment journey">
+          {["Get started", "Your finances", "Your assessment"].map((label, index) => (
+            <li key={label} className={index === currentStep ? "current" : index < currentStep ? "done" : ""} aria-current={index === currentStep ? "step" : undefined}>
+              <span className="journey-number" aria-hidden="true">{index < currentStep ? <Check size={14} /> : index + 1}</span><span>{label}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
       {children}
+      <footer className="app-footer no-print"><span>Borrower Copilot</span><span>Clarity before commitment.</span></footer>
     </div>
   );
 }

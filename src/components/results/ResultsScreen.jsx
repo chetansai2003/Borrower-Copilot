@@ -46,7 +46,7 @@ function barWidth(value, max) {
 
 function MetricCard({ icon: Icon, label, value, helper, emphasis = false }) {
   return (
-    <Card className={`space-y-3 ${emphasis ? "border-teal/30 bg-teal/10" : ""}`}>
+    <Card className={`metric-card space-y-3 ${emphasis ? "metric-emphasis" : ""}`}>
       <div className="flex min-h-11 items-center gap-3">
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-navy/8 text-navy">
           <Icon aria-hidden="true" size={22} />
@@ -113,7 +113,7 @@ function ComparisonBar({ assessment, viewModel }) {
 
 function PricingSection({ viewModel }) {
   return (
-    <Card className="space-y-5">
+    <Card className="pricing-section space-y-5">
       <div className="flex items-start gap-3">
         <TrendingUp className="mt-1 text-teal" aria-hidden="true" />
         <div>
@@ -143,7 +143,7 @@ function TenureTradeoff({ assessment, viewModel }) {
         </div>
       </div>
       {viewModel.tenureComparison.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" role="region" aria-label="Tenure comparison" tabIndex={0}>
           <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-navy/10 text-navy/70">
@@ -231,7 +231,7 @@ function RiskList({ risks }) {
 function MissingInformationList({ viewModel }) {
   return (
     <Card className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
         <div>
           <h2 className="text-xl font-semibold text-navy">Confidence and missing information</h2>
           <p className="mt-2 text-sm leading-6 text-navy/70">Confidence reflects data quality, not whether the verdict is positive or negative.</p>
@@ -428,8 +428,8 @@ export function ResultsScreen() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className={`rounded-lg border p-5 sm:p-6 ${toneClasses[viewModel.verdict.tone] ?? toneClasses.neutral}`} aria-live="polite">
+    <div className="results-layout">
+      <section className={`results-verdict rounded-lg border p-5 sm:p-6 ${toneClasses[viewModel.verdict.tone] ?? toneClasses.neutral}`} aria-live="polite">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-navy sm:text-3xl">

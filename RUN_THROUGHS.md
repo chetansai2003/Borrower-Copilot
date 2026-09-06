@@ -34,7 +34,7 @@ Priya represents a borrower with stable salaried income and a requested amount i
 6. How stable is this income across months?
 7. How much do essential household expenses cost each month?
 8. How much do you already pay each month toward EMIs or debt?
-9. How many months of essential expenses are saved for emergencies?
+9. How much emergency savings do you have available? (Total INR amount.)
 10. Have you had any recent repayment or credit difficulty?
 11. About how much debt is still outstanding?
 
@@ -113,7 +113,7 @@ Ravi represents a borrower where some borrowing appears possible, but the reques
 6. How stable is this income across months?
 7. How much do essential household expenses cost each month?
 8. How much do you already pay each month toward EMIs or debt?
-9. How many months of essential expenses are saved for emergencies?
+9. How much emergency savings do you have available? (Total INR amount.)
 10. Have you had any recent repayment or credit difficulty?
 11. How long has the business operated?
 12. About how much debt is still outstanding?
@@ -197,7 +197,7 @@ Anita represents a complete profile where borrowing is not recommended because e
 6. How stable is this income across months?
 7. How much do essential household expenses cost each month?
 8. How much do you already pay each month toward EMIs or debt?
-9. How many months of essential expenses are saved for emergencies?
+9. How much emergency savings do you have available? (Total INR amount.)
 10. Have you had any recent repayment or credit difficulty?
 11. How much do you earn in a lower-income month?
 12. About how much debt is still outstanding?

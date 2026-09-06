@@ -19,16 +19,19 @@ export function CurrencyInput({
   ...props
 }) {
   const [isFocused, setIsFocused] = useState(false);
+  const [draft, setDraft] = useState("");
   const helperId = helperText ? `${id}-helper` : undefined;
   const errorId = error ? `${id}-error` : undefined;
   const hasValue = value !== "" && value !== null && value !== undefined;
-  const displayValue = hasValue ? (isFocused ? String(value) : formatINR(value)) : "";
+  const displayValue = isFocused ? draft : hasValue ? formatINR(value) : "";
 
   const handleChange = (event) => {
+    setDraft(event.target.value);
     onValueChange?.(parseCurrencyNumber(event.target.value));
   };
 
   const handleFocus = (event) => {
+    setDraft(hasValue ? String(value) : "");
     setIsFocused(true);
     onFocus?.(event);
   };
@@ -46,7 +49,7 @@ export function CurrencyInput({
       </label>
       <input
         id={id}
-        inputMode="numeric"
+        inputMode="decimal"
         disabled={disabled}
         required={required}
         value={displayValue}

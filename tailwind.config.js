@@ -4,15 +4,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "var(--color-background)",
-        surface: "var(--color-surface)",
-        navy: "var(--color-navy)",
-        teal: "var(--color-teal)",
-        gold: "var(--color-gold)",
-        danger: "var(--color-danger)"
+        background: "rgb(var(--rgb-background) / <alpha-value>)",
+        surface: "rgb(var(--rgb-surface) / <alpha-value>)",
+        navy: "rgb(var(--rgb-navy) / <alpha-value>)",
+        teal: "rgb(var(--rgb-teal) / <alpha-value>)",
+        gold: "rgb(var(--rgb-gold) / <alpha-value>)",
+        danger: "rgb(var(--rgb-danger) / <alpha-value>)"
       },
       boxShadow: {
-        soft: "0 20px 55px rgba(22, 40, 63, 0.08)"
+        soft: "0 4px 16px rgba(22, 40, 63, 0.04)"
       }
     }
   },

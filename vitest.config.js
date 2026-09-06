@@ -9,7 +9,7 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: "./src/tests/setup.js",
-    testTimeout: 10000
+    testTimeout: 10000,
+    exclude: ["tests/e2e/**", "node_modules/**", "dist/**"]
   }
 });
-

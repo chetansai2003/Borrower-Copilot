@@ -1,7 +1,36 @@
-node_modules
-dist
-coverage
+# Dependencies
+node_modules/
+
+# Production build
+dist/
+dist-ssr/
+*.local
+
+# Environment variables & secrets
 .env
-.env.local
+.env.*
+!.env.example
+
+# Logs
 npm-debug.log*
-Borrower_Copilot_End_to_End_Architecture
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Testing & QA artifacts
+coverage/
+playwright-report/
+test-results/
+qa-artifacts/
+
+# Architecture & documentation (excluded from repo)
+Borrower_Copilot_End_to_End_Architecture*
+*.docx
+docs/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

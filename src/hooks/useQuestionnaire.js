@@ -25,6 +25,17 @@ function findQuestionById(questionId) {
 export function useQuestionnaire() {
   const { state, dispatch } = useAssessment();
   const visibleQuestions = useMemo(() => getVisibleQuestions(questions, state.answers), [state.answers]);
+  const possibleFollowUps = useMemo(
+    () =>
+      questions
+        .filter((question) => question.tier === "follow_up")
+        .map((question) => ({
+          id: question.id,
+          label: question.label,
+          triggerSummary: question.triggerSummary ?? question.label
+        })),
+    []
+  );
   const currentQuestion = getCurrentQuestion(visibleQuestions, state.currentQuestionId);
   const currentStep = Math.max(
     0,
@@ -134,6 +145,7 @@ export function useQuestionnaire() {
     error: currentQuestion ? state.errors[currentQuestion.id] : null,
     goBack,
     hasPreviousQuestion: state.questionHistory.length > 0,
+    possibleFollowUps,
     progress,
     restart,
     setAnswer,

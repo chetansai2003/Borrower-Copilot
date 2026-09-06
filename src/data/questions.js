@@ -136,18 +136,13 @@ export const questions = [
   {
     id: "emergencySavings",
     tier: "essential",
-    label: "How many months of essential expenses are saved for emergencies?",
-    helperText: "If you are not sure, choose Unknown. Unknown is not treated as zero.",
-    type: "choice",
+    label: "How much emergency savings do you have available?",
+    helperText: "Enter the total amount in rupees available for emergencies. Enter zero only if you have none, or choose I do not know if you are unsure.",
+    type: "currency",
     required: true,
     unknownAllowed: true,
-    options: [
-      { value: "0", label: "No buffer" },
-      { value: "1", label: "About 1 month" },
-      { value: "3", label: "About 3 months" },
-      { value: "6", label: "6 months or more" }
-    ],
-    schema: nonNegativeNumber("Choose an emergency savings option."),
+    options: [],
+    schema: nonNegativeNumber("Emergency savings cannot be negative."),
     appliesWhen: () => true,
     impactAreas: ["stressTest", "confidence"]
   },
@@ -172,6 +167,7 @@ export const questions = [
   {
     id: "lowMonthIncome",
     tier: "follow_up",
+    triggerSummary: "Irregular or seasonal income",
     label: "How much do you earn in a lower-income month?",
     helperText: "This helps avoid recommending an EMI based only on good months.",
     type: "currency",
@@ -185,6 +181,7 @@ export const questions = [
   {
     id: "businessAgeMonths",
     tier: "follow_up",
+    triggerSummary: "Self-employed or business income",
     label: "How long has the business operated?",
     helperText: "Business age helps later distinguish a newer business from a more established one.",
     type: "choice",
@@ -202,6 +199,7 @@ export const questions = [
   {
     id: "outstandingDebtAmount",
     tier: "follow_up",
+    triggerSummary: "Existing EMI or debt payments above zero",
     label: "About how much debt is still outstanding?",
     helperText: "This helps later separate a small monthly EMI from a larger remaining obligation.",
     type: "currency",
@@ -215,6 +213,7 @@ export const questions = [
   {
     id: "repaymentDifficultyRecency",
     tier: "follow_up",
+    triggerSummary: "Recent repayment or credit difficulty",
     label: "How recent was the repayment difficulty?",
     helperText: "Recent problems usually need a more cautious next step than older, resolved issues.",
     type: "choice",
@@ -235,6 +234,7 @@ export const questions = [
   {
     id: "courseOrJobExpectation",
     tier: "follow_up",
+    triggerSummary: "Education borrowing purpose",
     label: "Is the education expected to improve income soon?",
     helperText: "This helps later distinguish a cost-only loan from one with a likely income path.",
     type: "choice",
@@ -252,6 +252,7 @@ export const questions = [
   {
     id: "emergencyUrgency",
     tier: "follow_up",
+    triggerSummary: "Medical or emergency borrowing purpose",
     label: "How urgent is the medical or emergency need?",
     helperText: "Urgency helps later prioritize safer immediate options and repayment flexibility.",
     type: "choice",

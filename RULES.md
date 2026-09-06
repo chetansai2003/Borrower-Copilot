@@ -250,6 +250,8 @@ A requested-loan stress failure can produce `BORROW_LESS` when some borrowing re
 
 Emergency savings are compared with essential expenses to estimate months of coverage.
 
+The questionnaire collects `emergencySavings` as a total INR amount, not a number of months. Coverage is `emergencySavings / essentialExpenses`. A confirmed zero is `0`, an unanswered field is `null`, and an explicit unknown is `"unknown"`; neither missing nor unknown savings is converted to zero.
+
 | Category | Rule |
 | --- | --- |
 | Low | Below 1 month |
